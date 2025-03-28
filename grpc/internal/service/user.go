@@ -4,6 +4,7 @@ import (
 	"Service/grpc/internal/models"
 	"Service/grpc/internal/repository"
 	"context"
+	"errors"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,6 +22,13 @@ func NewUserService(repo repository.User, log *zap.SugaredLogger) User {
 }
 
 func (u *userService) Register(ctx context.Context, user models.Users) error {
+
+	ok := u.repo.CheckExists(ctx, user)
+	if !ok {
+		u.log.Info("User already exists")
+		return errors.New("user already created")
+	}
+
 	newPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		u.log.Errorw("error to hash password", "error", err)

@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	createUserQuery = `INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3)`
+	createUserQuery  = `INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3)`
+	checkExistsQuery = `SELECT username FROM users WHERE username = $1 OR email = $2`
 )
 
 type userRepository struct {
@@ -24,4 +25,14 @@ func (u *userRepository) Register(ctx context.Context, user models.Users) error 
 		return err
 	}
 	return nil
+}
+
+func (u *userRepository) CheckExists(ctx context.Context, user models.Users) bool {
+	var username string
+	_ = u.pool.QueryRow(ctx, checkExistsQuery, user.Username, user.Email).Scan(&username)
+	if username == "" {
+		return true
+	}
+
+	return false
 }
