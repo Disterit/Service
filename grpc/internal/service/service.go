@@ -9,10 +9,12 @@ type User interface {
 	Register(ctx context.Context, user models.Users) error
 }
 
-type Server struct {
+type Service struct {
 	User User
 }
 
-func NewServer(user User) *Server {
-	return &Server{User: user}
+func NewService(user User) *Service {
+	return &Service{
+		User: user,
+	}
 }

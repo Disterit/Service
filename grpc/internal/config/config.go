@@ -2,9 +2,16 @@ package config
 
 import "time"
 
+const EnvPath = "grpc/local.env"
+
 type AppConfig struct {
 	LogLevel   string `envconfig:"LOG_LEVEL" required:"true"`
+	Grpc       Grpc
 	PostgresDB PostgresDB
+}
+
+type Grpc struct {
+	Port string `envconfig:"PORT" required:"true"`
 }
 
 type PostgresDB struct {

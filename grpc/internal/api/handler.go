@@ -3,11 +3,22 @@ package api
 import (
 	"Service/grpc/api/pb"
 	"Service/grpc/internal/models"
+	"Service/grpc/internal/service"
 	"context"
+	"go.uber.org/zap"
 )
 
 type AuthHandler struct {
+	user service.User
+	log  *zap.SugaredLogger
 	pb.UnimplementedAuthServiceServer
+}
+
+func NewAuthHandler(user service.User, log *zap.SugaredLogger) *AuthHandler {
+	return &AuthHandler{
+		user: user,
+		log:  log,
+	}
 }
 
 func (s *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -15,6 +26,14 @@ func (s *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	var user models.Users
 	user.Username = req.GetUsername()
 	user.Password = req.GetPassword()
+
+	err := s.user.Register(ctx, user)
+	if err != nil {
+		s.log.Errorw("error to create user in service", "error", err)
+		return nil, err
+	}
+
+	s.log.Infow("register user in service", "username", user.Username)
 
 	return &pb.RegisterResponse{Message: "User registered successfully"}, nil
 }
