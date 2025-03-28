@@ -8,6 +8,7 @@ import (
 
 const (
 	createUserQuery  = `INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3)`
+	loginQuery       = `SELECT is_active FROM users WHERE username = $1 AND password_hash = $2`
 	checkExistsQuery = `SELECT username FROM users WHERE username = $1 OR email = $2`
 )
 
@@ -35,4 +36,14 @@ func (u *userRepository) CheckExists(ctx context.Context, user models.Users) boo
 	}
 
 	return false
+}
+
+func (u *userRepository) Login(ctx context.Context, user models.Users) (bool, error) {
+	var active bool
+	err := u.pool.QueryRow(ctx, loginQuery, user.Username, user.Password).Scan(&active)
+	if err != nil {
+		return false, err
+	}
+
+	return active, nil
 }
