@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 )
 
 func main() {
@@ -65,9 +67,20 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	log.Println("Starting gRPC server on port 50051")
-	if err := server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	go func() {
+		log.Println("Starting gRPC server on port 50051")
+		if err := server.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	// ждем завершение процесса
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	<-signalChan
+
+	if err := repository.CloseConnection(pool); err != nil {
+		log.Fatal("Error closing connection", zap.Error(err))
 	}
 
 }
