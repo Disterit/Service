@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	createUserQuery = `INSERT INTO users (username, password) VALUES ($1, $2)`
+	createUserQuery = `INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3)`
 )
 
 type userRepository struct {
@@ -19,7 +19,7 @@ func NewUserRepository(pool *pgxpool.Pool) User {
 }
 
 func (u *userRepository) Register(ctx context.Context, user models.Users) error {
-	_, err := u.pool.Exec(ctx, createUserQuery, user.Username, user.Password)
+	_, err := u.pool.Exec(ctx, createUserQuery, user.Username, user.Password, user.Email)
 	if err != nil {
 		return err
 	}
