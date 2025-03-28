@@ -8,6 +8,7 @@ import (
 	"Service/grpc/internal/repository"
 	"Service/grpc/internal/service"
 	"context"
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
@@ -82,5 +83,7 @@ func main() {
 	if err := repository.CloseConnection(pool); err != nil {
 		log.Fatal("Error closing connection", zap.Error(err))
 	}
+
+	fmt.Println("server stopped")
 
 }
