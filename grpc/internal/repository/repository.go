@@ -7,7 +7,7 @@ import (
 
 type User interface {
 	Register(ctx context.Context, user models.Users) error
-	Login(ctx context.Context, user models.Users) (bool, error)
+	Login(ctx context.Context, user models.Users) (models.Users, error)
 	CheckExists(ctx context.Context, user models.Users) bool
 }
 

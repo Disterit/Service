@@ -4,10 +4,9 @@ import (
 	"Service/grpc/internal/models"
 	"Service/grpc/internal/repository"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
@@ -30,9 +29,15 @@ func (u *userService) Register(ctx context.Context, user models.Users) error {
 		return errors.New("user already created")
 	}
 
-	user.Password = generateHashPassword(user.Password)
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		u.log.Errorw("Failed to hash password for registration", "error", err)
+		return err
+	}
 
-	err := u.repo.Register(ctx, user)
+	user.Password = string(hashPassword)
+
+	err = u.repo.Register(ctx, user)
 	if err != nil {
 		u.log.Errorw("error to create user in db", "error", err)
 		return err
@@ -43,16 +48,20 @@ func (u *userService) Register(ctx context.Context, user models.Users) error {
 
 func (u *userService) Login(ctx context.Context, user models.Users) (string, error) {
 
-	user.Password = generateHashPassword(user.Password)
-
-	active, err := u.repo.Login(ctx, user)
+	userGet, err := u.repo.Login(ctx, user)
 	if err != nil {
 		u.log.Errorw("error to login", "error", err)
 		return "", err
 	}
 
+	compareHashes := bcrypt.CompareHashAndPassword([]byte(userGet.Password), []byte(user.Password))
+	if compareHashes != nil {
+		u.log.Errorw("error to login, check password or name", "error", errors.New("invalid password"))
+		return "", errors.New("invalid password")
+	}
+
 	// тут логика создание токена будет если пользователь есть
-	if !active {
+	if !userGet.Active {
 		u.log.Infow("user not active")
 		return "", errors.New("can't login")
 	}
@@ -64,12 +73,4 @@ func (u *userService) Login(ctx context.Context, user models.Users) (string, err
 
 func generateToken() (string, error) {
 	return "sercretToken1234", nil
-}
-
-func generateHashPassword(password string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(password))
-	hashBytes := hasher.Sum(nil)
-
-	return hex.EncodeToString(hashBytes)
 }
